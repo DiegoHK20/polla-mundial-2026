@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>⚽ Polla Mundial 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;700;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>*{box-sizing:border-box;margin:0;padding:0}body{background:#070d1a}input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{opacity:1}</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const{useState,useEffect,useCallback}=React;
+
+const GD=[
+  {id:"A",t:[{k:"MEX",n:"México",f:"🇲🇽"},{k:"KOR",n:"Corea del Sur",f:"🇰🇷"},{k:"RSA",n:"Sudáfrica",f:"🇿🇦"},{k:"CZE",n:"Rep. Checa",f:"🇨🇿"}]},
+  {id:"B",t:[{k:"CAN",n:"Canadá",f:"🇨🇦"},{k:"SUI",n:"Suiza",f:"🇨🇭"},{k:"QAT",n:"Qatar",f:"🇶🇦"},{k:"BIH",n:"Bosnia",f:"🇧🇦"}]},
+  {id:"C",t:[{k:"BRA",n:"Brasil",f:"🇧🇷"},{k:"MAR",n:"Marruecos",f:"🇲🇦"},{k:"SCO",n:"Escocia",f:"🏴󠁧󠁢󠁳󠁣󠁴󠁿"},{k:"HAI",n:"Haití",f:"🇭🇹"}]},
+  {id:"D",t:[{k:"USA",n:"EE.UU.",f:"🇺🇸"},{k:"AUS",n:"Australia",f:"🇦🇺"},{k:"PAR",n:"Paraguay",f:"🇵🇾"},{k:"TUR",n:"Turquía",f:"🇹🇷"}]},
+  {id:"E",t:[{k:"GER",n:"Alemania",f:"🇩🇪"},{k:"ECU",n:"Ecuador",f:"🇪🇨"},{k:"CIV",n:"C.Marfil",f:"🇨🇮"},{k:"CUW",n:"Curazao",f:"🇨🇼"}]},
+  {id:"F",t:[{k:"NED",n:"P.Bajos",f:"🇳🇱"},{k:"JPN",n:"Japón",f:"🇯🇵"},{k:"TUN",n:"Túnez",f:"🇹🇳"},{k:"SWE",n:"Suecia",f:"🇸🇪"}]},
+  {id:"G",t:[{k:"BEL",n:"Bélgica",f:"🇧🇪"},{k:"IRN",n:"Irán",f:"🇮🇷"},{k:"EGY",n:"Egipto",f:"🇪🇬"},{k:"NZL",n:"N.Zelanda",f:"🇳🇿"}]},
+  {id:"H",t:[{k:"ESP",n:"España",f:"🇪🇸"},{k:"URU",n:"Uruguay",f:"🇺🇾"},{k:"KSA",n:"Arabia S.",f:"🇸🇦"},{k:"CPV",n:"Cabo Verde",f:"🇨🇻"}]},
+  {id:"I",t:[{k:"FRA",n:"Francia",f:"🇫🇷"},{k:"SEN",n:"Senegal",f:"🇸🇳"},{k:"NOR",n:"Noruega",f:"🇳🇴"},{k:"IRQ",n:"Irak",f:"🇮🇶"}]},
+  {id:"J",t:[{k:"ARG",n:"Argentina",f:"🇦🇷"},{k:"AUT",n:"Austria",f:"🇦🇹"},{k:"ALG",n:"Argelia",f:"🇩🇿"},{k:"JOR",n:"Jordania",f:"🇯🇴"}]},
+  {id:"K",t:[{k:"POR",n:"Portugal",f:"🇵🇹"},{k:"COL",n:"Colombia",f:"🇨🇴"},{k:"UZB",n:"Uzbekistán",f:"🇺🇿"},{k:"COD",n:"RD Congo",f:"🇨🇩"}]},
+  {id:"L",t:[{k:"ENG",n:"Inglaterra",f:"🏴󠁧󠁢󠁥󠁮󠁧󠁿"},{k:"CRO",n:"Croacia",f:"🇭🇷"},{k:"PAN",n:"Panamá",f:"🇵🇦"},{k:"GHA",n:"Ghana",f:"🇬🇭"}]},
+];
+const PAIRS=[[0,1],[0,2],[0,3],[1,2],[1,3],[2,3]];
+function buildMatches(){
+  const m=[];
+  GD.forEach(g=>PAIRS.forEach(([a,b],i)=>
+    m.push({id:`G${g.id}${i+1}`,stage:"groups",group:g.id,home:g.t[a],away:g.t[b]})));
+  for(let i=1;i<=16;i++)m.push({id:`R32-${i}`,stage:"r32"});
+  for(let i=1;i<=8;i++)m.push({id:`OCT-${i}`,stage:"oct"});
+  for(let i=1;i<=4;i++)m.push({id:`QF-${i}`,stage:"qf"});
+  m.push({id:"SF-1",stage:"sf"},{id:"SF-2",stage:"sf"},{id:"3PO",stage:"third"},{id:"FIN",stage:"final"});
+  return m;
+}
+const MATCHES=buildMatches();
+const STAGE_PAY={r32:"paidR32",oct:"paidOct",qf:"paidQF",sf:"paidSF",third:"paidSF",final:"paidFinal"};
+
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+function stageIds(stage,grp){
+  return stage==="groups"
+    ?MATCHES.filter(m=>m.stage==="groups"&&m.group===grp).map(m=>m.id)
+    :MATCHES.filter(m=>m.stage===stage).map(m=>m.id);
+}
+function calcPts(pid,preds,results){
+  let ex=0,pa=0,tot=0,pred=0;
+  MATCHES.forEach(m=>{
+    const r=results[m.id];const p=preds[`${pid}:${m.id}`];
+    if(!p)return;pred++;
+    if(!r)return;
+    if(p.h===r.h&&p.a===r.a){ex++;tot+=2;}
+    else{
+      const rw=r.h>r.a?"h":r.h<r.a?"a":"d";
+      const pw=p.h>p.a?"h":p.h<p.a?"a":"d";
+      if(rw===pw){pa++;tot+=1;}
+    }
+  });
+  return{ex,pa,tot,pred};
+}
+function predBadge(mid,pid,preds,results){
+  const r=results[mid];const p=preds[`${pid}:${mid}`];
+  if(!p)return null;
+  if(!r)return{label:"⏳ Pendiente",color:"#1e3a5f",text:"#64748b"};
+  if(p.h===r.h&&p.a===r.a)return{label:"✓ EXACTO",color:"#064e3b",text:"#6ee7b7"};
+  const rw=r.h>r.a?"h":r.h<r.a?"a":"d";
+  const pw=p.h>p.a?"h":p.h<p.a?"a":"d";
+  return rw===pw?{label:"✓ Ganador",color:"#713f12",text:"#fbbf24"}:{label:"✗ Falló",color:"#450a0a",text:"#f87171"};
+}
+function s2Winner(mid,players,preds,results){
+  const r=results[mid];if(!r)return null;
+  let mn=Infinity,ws=[];
+  players.forEach(p=>{
+    const pr=preds[`${p.id}:${mid}`];if(!pr)return;
+    const d=Math.abs(pr.h-r.h)+Math.abs(pr.a-r.a);
+    if(d<mn){mn=d;ws=[p];}else if(d===mn)ws.push(p);
+  });
+  return ws.length?{ws,mn,exact:mn===0}:null;
+}
+function getTeam(mid,side,kt){
+  const m=MATCHES.find(x=>x.id===mid);
+  if(m&&side==="home"&&m.home)return m.home;
+  if(m&&side==="away"&&m.away)return m.away;
+  const k=kt[mid]||{};
+  return side==="home"?{n:k.hname||"TBD",f:k.hflag||"🏳️"}:{n:k.aname||"TBD",f:k.aflag||"🏳️"};
+}
+function hasTeams(mid,kt){
+  const m=MATCHES.find(x=>x.id===mid);
+  if(m&&m.home&&m.away)return true;
+  const k=kt[mid]||{};
+  return !!(k.hname&&k.aname);
+}
+
+const css={
+  body:{background:"#070d1a",minHeight:"100vh",fontFamily:"'Barlow',sans-serif",color:"#e2e8f0"},
+  hdr:{background:"linear-gradient(135deg,#0a1628,#152347,#0a1628)",borderBottom:"2px solid #00e676",padding:"14px 16px 10px",textAlign:"center"},
+  h1:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:"clamp(1.4rem,5vw,2rem)",fontWeight:900,letterSpacing:2,background:"linear-gradient(90deg,#FFD700,#00e676,#FFD700)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"},
+  tabs:{display:"flex",background:"#0d1628",borderBottom:"1px solid #1e3a5f",overflowX:"auto"},
+  tab:(on)=>({flex:1,minWidth:72,padding:"11px 4px",border:"none",background:"none",color:on?"#00e676":"#475569",fontFamily:"'Barlow Condensed',sans-serif",fontSize:"0.82rem",fontWeight:700,letterSpacing:0.5,cursor:"pointer",borderBottom:on?"3px solid #00e676":"3px solid transparent",whiteSpace:"nowrap",transition:"all .15s"}),
+  content:{padding:14,maxWidth:700,margin:"0 auto"},
+  sec:{fontFamily:"'Barlow Condensed',sans-serif",fontSize:"1.1rem",fontWeight:700,color:"#FFD700",letterSpacing:1.5,textTransform:"uppercase",marginBottom:12},
+  card:{background:"#111827",border:"1px solid #1e3a5f",borderRadius:10,padding:14,marginBottom:10},
+  subTabs:{display:"flex",flexWrap:"wrap",gap:5,marginBottom:12},
+  stb:(on)=>({padding:"5px 10px",borderRadius:6,border:on?"1px solid #3b82f6":"1px solid #1e3a5f",background:on?"#0e4d92":"#0d1628",color:on?"#fff":"#475569",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:"0.78rem",cursor:"pointer",letterSpacing:0.3}),
+  inp:{flex:1,background:"#0d1628",border:"1px solid #1e3a5f",borderRadius:7,color:"#e2e8f0",padding:"9px 11px",fontFamily:"'Barlow',sans-serif",fontSize:"0.88rem",outline:"none"},
+  btn:(v="normal")=>({background:v==="red"?"#7f1d1d":"#0e4d92",color:v==="red"?"#fca5a5":"#fff",border:"none",borderRadius:7,padding:v==="sm"?"5px 9px":"9px 14px",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,cursor:"pointer",fontSize:v==="sm"?"0.75rem":"0.88rem",whiteSpace:"nowrap"}),
+  mc:{background:"#0d1628",border:"1px solid #1e3a5f",borderRadius:9,padding:11,marginBottom:7},
+  sci:{width:42,height:36,background:"#111827",border:"1px solid #1e3a5f",borderRadius:7,color:"#e2e8f0",textAlign:"center",fontFamily:"'Barlow Condensed',sans-serif",fontSize:"1.1rem",fontWeight:700,outline:"none"},
+  badge:(bg,text)=>({display:"inline-block",padding:"2px 7px",borderRadius:999,background:bg,color:text,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:"0.68rem",letterSpacing:0.3}),
+  chip:(on)=>({padding:"3px 9px",borderRadius:999,fontSize:"0.68rem",fontWeight:700,cursor:"pointer",border:on?"1px solid #10b981":"1px solid #1e3a5f",background:on?"#064e3b":"#111827",color:on?"#6ee7b7":"#374151",fontFamily:"'Barlow Condensed',sans-serif",userSelect:"none"}),
+  tbl:{width:"100%",borderCollapse:"collapse",fontSize:"0.85rem"},
+  th:{background:"#0e4d92",color:"#FFD700",fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:0.5,padding:"9px 7px",textAlign:"left",fontSize:"0.78rem"},
+  td:{padding:"9px 7px",borderBottom:"1px solid #1e3a5f"},
+  sumbar:{display:"flex",gap:6,flexWrap:"wrap",marginBottom:12},
+  schi:{background:"#0d1628",border:"1px solid #1e3a5f",borderRadius:7,padding:"7px 10px",display:"flex",flexDirection:"column",alignItems:"center",minWidth:62},
+  infoBox:{background:"rgba(0,230,118,0.07)",border:"1px solid rgba(0,230,118,0.2)",borderRadius:8,padding:"9px 12px",marginBottom:12,fontSize:"0.82rem",color:"#a7f3d0",lineHeight:1.5},
+  warnBox:{background:"rgba(255,215,0,0.07)",border:"1px solid rgba(255,215,0,0.2)",borderRadius:8,padding:"9px 12px",marginBottom:12,fontSize:"0.82rem",color:"#fde68a",lineHeight:1.5},
+  empty:{textAlign:"center",padding:"32px 16px",color:"#374151"},
+};
+
+function App(){
+  const[tab,setTab]=useState("players");
+  const[players,setPlayers]=useState([]);
+  const[results,setResults]=useState({});
+  const[preds,setPreds]=useState({});
+  const[kt,setKt]=useState({});
+  const[toast,setToast]=useState(null);
+  const[newName,setNewName]=useState("");
+  const[selPid,setSelPid]=useState("");
+  const[predStage,setPredStage]=useState("groups");
+  const[predGrp,setPredGrp]=useState("A");
+  const[resStage,setResStage]=useState("groups");
+  const[resGrp,setResGrp]=useState("A");
+  const[tblSys,setTblSys]=useState("s1");
+  const[tblS2,setTblS2]=useState("oct");
+
+  useEffect(()=>{
+    try{const d=localStorage.getItem("pm26:players");if(d)setPlayers(JSON.parse(d));}catch(e){}
+    try{const d=localStorage.getItem("pm26:results");if(d)setResults(JSON.parse(d));}catch(e){}
+    try{const d=localStorage.getItem("pm26:preds");if(d)setPreds(JSON.parse(d));}catch(e){}
+    try{const d=localStorage.getItem("pm26:kt");if(d)setKt(JSON.parse(d));}catch(e){}
+  },[]);
+
+  const save=useCallback((key,val)=>{
+    try{localStorage.setItem("pm26:"+key,JSON.stringify(val));}catch(e){}
+  },[]);
+
+  const showToast=(msg,err=false)=>{
+    setToast({msg,err});
+    setTimeout(()=>setToast(null),2200);
+  };
+
+  const addPlayer=()=>{
+    const name=newName.trim();if(!name)return;
+    if(players.some(p=>p.name.toLowerCase()===name.toLowerCase())){showToast("⚠️ Ya existe ese nombre",true);return;}
+    const np=[...players,{id:uid(),name,paidS1:false,paidR32:false,paidOct:false,paidQF:false,paidSF:false,paidFinal:false}];
+    setPlayers(np);save("players",np);setNewName("");showToast("✅ Participante agregado");
+  };
+  const togglePay=(pid,key)=>{
+    const np=players.map(p=>p.id===pid?{...p,[key]:!p[key]}:p);
+    setPlayers(np);save("players",np);
+    const p=np.find(x=>x.id===pid);
+    showToast(p[key]?"💚 Pago registrado":"🔴 Pago desmarcado");
+  };
+  const delPlayer=(pid)=>{
+    if(!confirm("¿Eliminar este participante y sus pronósticos?"))return;
+    const np=players.filter(p=>p.id!==pid);setPlayers(np);save("players",np);
+    const np2=Object.fromEntries(Object.entries(preds).filter(([k])=>!k.startsWith(pid+":")));
+    setPreds(np2);save("preds",np2);
+    if(selPid===pid)setSelPid("");
+    showToast("🗑️ Eliminado");
+  };
+  const savePred=(pid,mid,side,val)=>{
+    const v=parseInt(val);if(isNaN(v)||v<0)return;
+    const key=`${pid}:${mid}`;
+    const np={...preds,[key]:{...(preds[key]||{h:0,a:0}),[side]:v}};
+    setPreds(np);save("preds",np);showToast("💾 Guardado");
+  };
+  const saveRes=(mid,side,val)=>{
+    const v=parseInt(val);if(isNaN(v)||v<0)return;
+    const nr={...results,[mid]:{...(results[mid]||{h:0,a:0}),[side]:v}};
+    setResults(nr);save("results",nr);showToast("⚽ Resultado guardado");
+  };
+  const clearRes=(mid)=>{
+    const nr={...results};delete nr[mid];
+    setResults(nr);save("results",nr);showToast("🗑️ Resultado borrado");
+  };
+  const saveKT=(mid,ks,val)=>{
+    const nk={...kt,[mid]:{...(kt[mid]||{}),[ks]:val}};
+    setKt(nk);save("kt",nk);
+  };
+
+  const TABS=[{id:"players",label:"👥 Jugadores"},{id:"pronos",label:"🎯 Pronósticos"},{id:"results",label:"⚽ Resultados"},{id:"tabla",label:"📊 Tabla"}];
+  const paidS1=players.filter(p=>p.paidS1);
+
+  return(
+    <div style={css.body}>
+      <div style={css.hdr}>
+        <div style={css.h1}>⚽ POLLA MUNDIAL 2026</div>
+        <div style={{color:"#475569",fontSize:"0.7rem",letterSpacing:1.5,marginTop:3}}>🇺🇸 USA · 🇲🇽 MX · 🇨🇦 CAN · 11 Jun – 19 Jul · 48 equipos · 104 partidos</div>
+      </div>
+      <div style={css.tabs}>
+        {TABS.map(t=><button key={t.id} style={css.tab(tab===t.id)} onClick={()=>setTab(t.id)}>{t.label}</button>)}
+      </div>
+      <div style={css.content}>
+
+        {tab==="players"&&<>
+          <div style={css.sec}>👥 Participantes</div>
+          <div style={css.card}>
+            <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:"0.9rem",color:"#00e676",marginBottom:10}}>AGREGAR PARTICIPANTE</div>
+            <div style={{display:"flex",gap:7}}>
+              <input style={css.inp} value={newName} onChange={e=>setNewName(e.target.value)}
+                onKeyDown={e=>e.key==="Enter"&&addPlayer()} placeholder="Nombre del participante" maxLength={30}/>
+              <button style={css.btn()} onClick={addPlayer}>+ Agregar</button>
+            </div>
+          </div>
+          <div style={css.sumbar}>
+            {[["Total",players.length],["S1 ✓",paidS1.length],["Oct ✓",players.filter(p=>p.paidOct).length],["SF ✓",players.filter(p=>p.paidSF).length],["Final ✓",players.filter(p=>p.paidFinal).length]].map(([l,v])=>(
+              <div key={l} style={css.schi}><span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:"1.1rem",fontWeight:900,color:"#00e676"}}>{v}</span><span style={{fontSize:"0.62rem",color:"#64748b"}}>{l}</span></div>
+            ))}
+          </div>
+          {players.length===0
+            ?<div style={css.empty}><div style={{fontSize:"2rem",marginBottom:8}}>👥</div><p style={{fontSize:"0.85rem"}}>Agrega los participantes de la polla.</p></div>
+            :players.map(p=>(
+              <div key={p.id} style={{background:"#0d1628",border:"1px solid #1e3a5f",borderRadius:9,padding:"11px 12px",marginBottom:7}}>
+                <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:8}}>
+                  <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:"1.05rem",fontWeight:700,flex:1}}>{p.name}</span>
+                  <button style={{...css.btn("red"),padding:"5px 9px",fontSize:"0.75rem"}} onClick={()=>delPlayer(p.id)}>✕</button>
+                </div>
+                <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
+                  {[["S1","paidS1"],["Oct","paidOct"],["QF","paidQF"],["SF","paidSF"],["Final","paidFinal"]].map(([l,k])=>(
+                    <span key={k} style={css.chip(p[k])} onClick={()=>togglePay(p.id,k)}>{p[k]?"✓ ":""}{l}</span>
+                  ))}
+                </div>
+              </div>
+          ))}
+          <div style={{marginTop:10,padding:"9px 12px",background:"#0d1628",borderRadius:7,border:"1px solid #1e3a5f",fontSize:"0.73rem",color:"#475569",lineHeight:1.5}}>
+            Toca los chips para marcar pagos. <b style={{color:"#64748b"}}>S1</b> = Sistema de puntos (todo el torneo). <b style={{color:"#64748b"}}>Oct/QF/SF/Final</b> = Boleta Sistema 2.
+          </div>
+        </>}
+
+        {tab==="pronos"&&<>
+          <div style={css.sec}>🎯 Pronósticos</div>
+          {paidS1.length===0
+            ?<div style={css.empty}><div style={{fontSize:"2rem"}}>🔒</div><p style={{fontSize:"0.85rem",marginTop:8}}>Agrega participantes y registra el pago S1.</p></div>
+            :<>
+              <select style={{...css.inp,marginBottom:12,cursor:"pointer"}} value={selPid} onChange={e=>setSelPid(e.target.value)}>
+                <option value="">— Seleccionar participante —</option>
+                {paidS1.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
+              {selPid
+                ?<div style={css.infoBox}>🎯 Pronósticos de: <b>{players.find(p=>p.id===selPid)?.name}</b> — Se guardan automáticamente.</div>
+                :<div style={css.infoBox}>👆 Selecciona un participante para ingresar sus pronósticos.</div>
+              }
+              <div style={css.subTabs}>
+                {["groups","oct","qf","sf","final"].map((s,i)=>(
+                  <button key={s} style={css.stb(predStage===s)} onClick={()=>setPredStage(s)}>
+                    {["Grupos","Octavos","Cuartos","Semis","Final"][i]}
+                  </button>
+                ))}
+              </div>
+              {predStage==="groups"&&(
+                <div style={{...css.subTabs,marginBottom:8}}>
+                  {"ABCDEFGHIJKL".split("").map(g=>(
+                    <button key={g} style={{...css.stb(predGrp===g),minWidth:32}} onClick={()=>setPredGrp(g)}>{g}</button>
+                  ))}
+                </div>
+              )}
+              {stageIds(predStage,predGrp).map(mid=>{
+                const home=getTeam(mid,"home",kt),away=getTeam(mid,"away",kt);
+                const pred=selPid?preds[`${selPid}:${mid}`]:null;
+                const res=results[mid];
+                const locked=!!res||!selPid;
+                const tbd=!hasTeams(mid,kt);
+                const bdg=selPid?predBadge(mid,selPid,preds,results):null;
+                const pObj=players.find(p=>p.id===selPid);
+                const m=MATCHES.find(x=>x.id===mid);
+                const s2k=STAGE_PAY[m.stage];
+                const s2paid=pObj&&s2k?pObj[s2k]:false;
+                return(
+                  <div key={mid} style={css.mc}>
+                    <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:7}}>
+                      <div style={{display:"flex",alignItems:"center",gap:5,flex:1}}>
+                        <span style={{fontSize:"1.15rem"}}>{home.f}</span>
+                        <span style={{fontSize:"0.8rem",fontWeight:600,maxWidth:75,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{home.n}</span>
+                      </div>
+                      <div style={{display:"flex",alignItems:"center",gap:5,flexShrink:0}}>
+                        <input style={{...css.sci,borderColor:locked||tbd?"#1e3a5f":"#2d5a9e"}} type="number" min={0} max={20}
+                          defaultValue={pred?.h??""} key={`${selPid}:${mid}:h`}
+                          onChange={e=>selPid&&savePred(selPid,mid,"h",e.target.value)} disabled={locked||tbd}/>
+                        <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:900,color:"#475569"}}>:</span>
+                        <input style={{...css.sci,borderColor:locked||tbd?"#1e3a5f":"#2d5a9e"}} type="number" min={0} max={20}
+                          defaultValue={pred?.a??""} key={`${selPid}:${mid}:a`}
+                          onChange={e=>selPid&&savePred(selPid,mid,"a",e.target.value)} disabled={locked||tbd}/>
+                      </div>
+                      <div style={{display:"flex",alignItems:"center",gap:5,flex:1,flexDirection:"row-reverse"}}>
+                        <span style={{fontSize:"1.15rem"}}>{away.f}</span>
+                        <span style={{fontSize:"0.8rem",fontWeight:600,maxWidth:75,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",textAlign:"right"}}>{away.n}</span>
+                      </div>
+                    </div>
+                    {res&&<div style={{fontSize:"0.73rem",color:"#64748b",marginBottom:4}}>Resultado real: <b style={{color:"#FFD700"}}>{res.h}–{res.a}</b></div>}
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:4}}>
+                      <span style={{fontSize:"0.65rem",color:"#374151"}}>{mid}{m.stage!=="groups"&&(s2paid?<span style={{color:"#6ee7b7",fontWeight:700}}> ⚡Boleta</span>:<span style={{color:"#374151"}}> Boleta:sin pago</span>)}</span>
+                      {bdg&&<span style={css.badge(bdg.color,bdg.text)}>{bdg.label}</span>}
+                      {!bdg&&tbd&&<span style={{fontSize:"0.7rem",color:"#374151",fontStyle:"italic"}}>Equipos pendientes</span>}
+                      {!bdg&&locked&&!tbd&&<span style={{fontSize:"0.7rem",color:"#374151",fontStyle:"italic"}}>🔒 Cerrado</span>}
+                    </div>
+                  </div>
+                );
+              })}
+            </>
+          }
+        </>}
+
+        {tab==="results"&&<>
+          <div style={css.sec}>⚽ Resultados Reales</div>
+          <div style={css.warnBox}>🔐 <b>Vista del organizador.</b> Ingresa los resultados reales. Los puntos se calculan automáticamente. <b style={{color:"#FFD700"}}>{Object.keys(results).length} resultado(s) registrado(s).</b></div>
+          <div style={css.subTabs}>
+            {["groups","oct","qf","sf","third","final"].map((s,i)=>(
+              <button key={s} style={css.stb(resStage===s)} onClick={()=>setResStage(s)}>
+                {["Grupos","Octavos","Cuartos","Semis","3er P.","Final"][i]}
+              </button>
+            ))}
+          </div>
+          {resStage==="groups"&&(
+            <div style={{...css.subTabs,marginBottom:8}}>
+              {"ABCDEFGHIJKL".split("").map(g=>(
+                <button key={g} style={{...css.stb(resGrp===g),minWidth:32}} onClick={()=>setResGrp(g)}>{g}</button>
+              ))}
+            </div>
+          )}
+          {stageIds(resStage,resGrp).map(mid=>{
+            const home=getTeam(mid,"home",kt),away=getTeam(mid,"away",kt);
+            const res=results[mid];
+            const m=MATCHES.find(x=>x.id===mid);
+            const isKO=m.stage!=="groups";
+            const tbd=isKO&&!hasTeams(mid,kt);
+            const k=kt[mid]||{};
+            const predCnt=players.filter(p=>preds[`${p.id}:${mid}`]).length;
+            return(
+              <div key={mid} style={css.mc}>
+                {isKO&&<div style={{display:"flex",gap:5,marginBottom:8,flexWrap:"wrap"}}>
+                  <input style={{...css.inp,flex:1,minWidth:110,fontSize:"0.8rem",padding:"7px 10px"}}
+                    placeholder="🏠 Local (ej: 🇧🇷 Brasil)" defaultValue={k.hname||""}
+                    onBlur={e=>saveKT(mid,"hname",e.target.value)}/>
+                  <input style={{...css.inp,flex:1,minWidth:110,fontSize:"0.8rem",padding:"7px 10px"}}
+                    placeholder="🛫 Visitante" defaultValue={k.aname||""}
+                    onBlur={e=>saveKT(mid,"aname",e.target.value)}/>
+                </div>}
+                <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:7}}>
+                  <div style={{display:"flex",alignItems:"center",gap:5,flex:1}}>
+                    <span style={{fontSize:"1.15rem"}}>{home.f}</span>
+                    <span style={{fontSize:"0.8rem",fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:80}}>{home.n}</span>
+                  </div>
+                  <div style={{display:"flex",alignItems:"center",gap:5,flexShrink:0}}>
+                    <input style={css.sci} type="number" min={0} max={20} defaultValue={res?.h??""}
+                      key={`res:${mid}:h:${res?.h}`}
+                      onChange={e=>saveRes(mid,"h",e.target.value)} disabled={tbd}/>
+                    <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:900,color:"#475569"}}>:</span>
+                    <input style={css.sci} type="number" min={0} max={20} defaultValue={res?.a??""}
+                      key={`res:${mid}:a:${res?.a}`}
+                      onChange={e=>saveRes(mid,"a",e.target.value)} disabled={tbd}/>
+                  </div>
+                  <div style={{display:"flex",alignItems:"center",gap:5,flex:1,flexDirection:"row-reverse"}}>
+                    <span style={{fontSize:"1.15rem"}}>{away.f}</span>
+                    <span style={{fontSize:"0.8rem",fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:80,textAlign:"right"}}>{away.n}</span>
+                  </div>
+                </div>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:4}}>
+                  <span style={{fontSize:"0.65rem",color:"#374151"}}>{mid} · {predCnt} pronóstico(s)</span>
+                  <div style={{display:"flex",gap:5,alignItems:"center"}}>
+                    {res?<span style={css.badge("#0e4d92","#93c5fd")}>✓ Ingresado</span>:<span style={css.badge("#1e293b","#64748b")}>Pendiente</span>}
+                    {res&&<button style={{...css.btn("red"),padding:"4px 8px",fontSize:"0.72rem"}} onClick={()=>clearRes(mid)}>✕</button>}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </>}
+
+        {tab==="tabla"&&<>
+          <div style={css.sec}>📊 Clasificación</div>
+          <div style={css.subTabs}>
+            <button style={css.stb(tblSys==="s1")} onClick={()=>setTblSys("s1")}>🏆 Sistema 1 — Puntos</button>
+            <button style={css.stb(tblSys==="s2")} onClick={()=>setTblSys("s2")}>🎯 Sistema 2 — Boleta</button>
+          </div>
+
+          {tblSys==="s1"&&<>
+            {players.length===0
+              ?<div style={css.empty}><div style={{fontSize:"2rem"}}>📊</div><p style={{fontSize:"0.85rem",marginTop:8}}>Agrega participantes para ver la tabla.</p></div>
+              :<>
+                <div style={{fontSize:"0.72rem",color:"#374151",marginBottom:10}}>{Object.keys(results).length} partido(s) con resultado · ✅ Exacto=2pts · ☑️ Ganador=1pt · Desempate: exactos → acertados → pronósticos</div>
+                <div style={{overflowX:"auto"}}>
+                  <table style={css.tbl}>
+                    <thead><tr>
+                      {["#","Nombre","✅ Exactos","☑️ Result.","⭐ Puntos","📝 Pred."].map((h,i)=>(
+                        <th key={i} style={{...css.th,textAlign:i>=2?"center":"left"}}>{h}</th>
+                      ))}
+                    </tr></thead>
+                    <tbody>
+                      {players.map(p=>({...p,...calcPts(p.id,preds,results)}))
+                        .sort((a,b)=>b.tot-a.tot||b.ex-a.ex||b.pa-a.pa||b.pred-a.pred)
+                        .map((p,i)=>{
+                          const r=i+1;
+                          const medal=r<=3?["🥇","🥈","🥉"][r-1]:r;
+                          return(
+                            <tr key={p.id} style={{background:i%2===0?"rgba(255,255,255,0.01)":"transparent"}}>
+                              <td style={{...css.td,fontFamily:"'Barlow Condensed',sans-serif",fontSize:"1rem",fontWeight:900,color:r===1?"#FFD700":r===2?"#9ca3af":r===3?"#cd7f32":"#475569"}}>{medal}</td>
+                              <td style={{...css.td,fontWeight:600}}>{p.name}</td>
+                              <td style={{...css.td,textAlign:"center",color:"#00e676",fontWeight:700}}>{p.ex}</td>
+                              <td style={{...css.td,textAlign:"center",color:"#FFD700",fontWeight:700}}>{p.pa}</td>
+                              <td style={{...css.td,textAlign:"center",fontFamily:"'Barlow Condensed',sans-serif",fontSize:"1.15rem",fontWeight:900,color:"#00e676"}}>{p.tot}</td>
+                              <td style={{...css.td,textAlign:"center",color:"#374151",fontSize:"0.8rem"}}>{p.pred}</td>
+                            </tr>
+                          );
+                        })
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            }
+          </>}
+
+          {tblSys==="s2"&&<>
+            <div style={css.subTabs}>
+              {["oct","qf","sf","third","final"].map((s,i)=>(
+                <button key={s} style={css.stb(tblS2===s)} onClick={()=>setTblS2(s)}>
+                  {["Octavos","Cuartos","Semis","3er P.","Final"][i]}
+                </button>
+              ))}
+            </div>
+            <div style={css.infoBox}>🎯 Solo gana el marcador EXACTO. Si nadie acierta, el bote se acumula al siguiente partido. Si la Final tampoco tiene exacto, el bote va al Sistema 1.</div>
+            {stageIds(tblS2).map(mid=>{
+              const home=getTeam(mid,"home",kt),away=getTeam(mid,"away",kt);
+              const res=results[mid];
+              const w=res?s2Winner(mid,players,preds,results):null;
+              const s2k=STAGE_PAY[tblS2];
+              const paidCnt=players.filter(p=>s2k&&p[s2k]).length;
+              const predCnt=players.filter(p=>preds[`${p.id}:${mid}`]).length;
+              return(
+                <div key={mid} style={{background:"#0d1628",border:"1px solid #1e3a5f",borderRadius:9,padding:"11px 12px",marginBottom:7}}>
+                  <div style={{display:"flex",alignItems:"center",gap:7,flexWrap:"wrap"}}>
+                    <span>{home.f} <b>{home.n}</b></span>
+                    <span style={{color:"#FFD700",fontFamily:"'Barlow Condensed',sans-serif",fontWeight:900,fontSize:"1.05rem"}}>{res?`${res.h}–${res.a}`:"vs"}</span>
+                    <span><b>{away.n}</b> {away.f}</span>
+                    {!res&&<span style={{...css.badge("#1e293b","#64748b"),marginLeft:"auto"}}>Sin resultado</span>}
+                  </div>
+                  <div style={{fontSize:"0.68rem",color:"#374151",marginTop:4}}>{mid} · {predCnt} pronóstico(s) · {paidCnt} pago(s) boleta</div>
+                  {res&&w&&w.ws.length>0&&(
+                    <div style={{display:"flex",alignItems:"center",gap:6,marginTop:7,paddingTop:7,borderTop:"1px solid rgba(255,255,255,0.05)",flexWrap:"wrap"}}>
+                      <span style={{fontSize:"0.75rem",color:"#64748b"}}>🏆 Ganador boleta:</span>
+                      <b style={{color:"#00e676",fontFamily:"'Barlow Condensed',sans-serif",fontSize:"1rem"}}>{w.ws.map(p=>p.name).join(" / ")}</b>
+                      {w.exact?<span style={css.badge("#064e3b","#6ee7b7")}>✓ EXACTO</span>:<span style={{fontSize:"0.72rem",color:"#ef4444"}}>✗ No hay exacto — bote acumulado</span>}
+                    </div>
+                  )}
+                  {res&&(!w||!w.ws.length)&&(
+                    <div style={{marginTop:7,paddingTop:7,borderTop:"1px solid rgba(255,255,255,0.05)",fontSize:"0.75rem",color:"#374151"}}>Sin pronósticos para este partido.</div>
+                  )}
+                </div>
+              );
+            })}
+          </>}
+        </>}
+
+      </div>
+
+      {toast&&(
+        <div style={{position:"fixed",bottom:16,left:"50%",transform:"translateX(-50%)",background:toast.err?"#ef4444":"#00e676",color:toast.err?"#fff":"#000",padding:"9px 18px",borderRadius:999,fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:"0.88rem",zIndex:999,whiteSpace:"nowrap",boxShadow:"0 4px 12px rgba(0,0,0,0.3)"}}>
+          {toast.msg}
+        </div>
+      )}
+    </div>
+  );
+}
+
+const root=ReactDOM.createRoot(document.getElementById("root"));
+root.render(<App/>);
+</script>
+</body>
+</html>
