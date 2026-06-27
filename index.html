@@ -7,7 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;700;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet"/>
 <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
 <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-<script src="https://unpkg.com/@babel/standalone@7.8.7/babel.min.js"></script>
+<scri pt src="https://unpkg.com/@babel/standalone@7.8.7/babel.min.js"></script>
 <style>*{box-sizing:border-box;margin:0;padding:0}body{background:#070d1a}input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{opacity:1}</style>
 </head>
 <body>
@@ -138,7 +138,7 @@ function App(){
   const[resStage,setResStage]=useState("groups");
   const[resGrp,setResGrp]=useState("A");
   const[tblSys,setTblSys]=useState("s1");
-  const[tblS2,setTblS2]=useState("oct");
+  const[tblS2,setTblS2]=useState("r32");
 
   useEffect(()=>{
     try{const d=localStorage.getItem("pm26:players");if(d)setPlayers(JSON.parse(d));}catch(e){}
@@ -234,7 +234,7 @@ function App(){
                   <button style={{...css.btn("red"),padding:"5px 9px",fontSize:"0.75rem"}} onClick={()=>delPlayer(p.id)}>✕</button>
                 </div>
                 <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
-                  {[["S1","paidS1"],["Oct","paidOct"],["QF","paidQF"],["SF","paidSF"],["Final","paidFinal"]].map(([l,k])=>(
+                  {[["S1","paidS1"],["R32","paidR32"],["Oct","paidOct"],["QF","paidQF"],["SF","paidSF"],["Final","paidFinal"]].map(([l,k])=>(
                     <span key={k} style={css.chip(p[k])} onClick={()=>togglePay(p.id,k)}>{p[k]?"✓ ":""}{l}</span>
                   ))}
                 </div>
@@ -259,9 +259,9 @@ function App(){
                 :<div style={css.infoBox}>👆 Selecciona un participante para ingresar sus pronósticos.</div>
               }
               <div style={css.subTabs}>
-                {["groups","oct","qf","sf","final"].map((s,i)=>(
+                {["groups","r32","oct","qf","sf","final"].map((s,i)=>(
                   <button key={s} style={css.stb(predStage===s)} onClick={()=>setPredStage(s)}>
-                    {["Grupos","Octavos","Cuartos","Semis","Final"][i]}
+                    {["Grupos","16avos","Octavos","Cuartos","Semis","Final"][i]}
                   </button>
                 ))}
               </div>
@@ -322,9 +322,9 @@ function App(){
           <div style={css.sec}>⚽ Resultados Reales</div>
           <div style={css.warnBox}>🔐 <b>Vista del organizador.</b> Ingresa los resultados reales. Los puntos se calculan automáticamente. <b style={{color:"#FFD700"}}>{Object.keys(results).length} resultado(s) registrado(s).</b></div>
           <div style={css.subTabs}>
-            {["groups","oct","qf","sf","third","final"].map((s,i)=>(
+            {["groups","r32","oct","qf","sf","third","final"].map((s,i)=>(
               <button key={s} style={css.stb(resStage===s)} onClick={()=>setResStage(s)}>
-                {["Grupos","Octavos","Cuartos","Semis","3er P.","Final"][i]}
+                {["Grupos","16avos","Octavos","Cuartos","Semis","3er P.","Final"][i]}
               </button>
             ))}
           </div>
@@ -430,9 +430,9 @@ function App(){
 
           {tblSys==="s2"&&<>
             <div style={css.subTabs}>
-              {["oct","qf","sf","third","final"].map((s,i)=>(
+              {["r32","oct","qf","sf","third","final"].map((s,i)=>(
                 <button key={s} style={css.stb(tblS2===s)} onClick={()=>setTblS2(s)}>
-                  {["Octavos","Cuartos","Semis","3er P.","Final"][i]}
+                  {["16avos","Octavos","Cuartos","Semis","3er P.","Final"][i]}
                 </button>
               ))}
             </div>
